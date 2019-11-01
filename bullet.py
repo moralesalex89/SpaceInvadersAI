@@ -21,6 +21,7 @@ class Bullet(Sprite):
             self.frame = 0
             self.rect = self.image.get_rect()
             self.rect.centerx = source.rect.centerx
+            self.mask = pygame.mask.from_surface(self.image)
 
             if is_ship:
                 self.rect.top = source.rect.top
