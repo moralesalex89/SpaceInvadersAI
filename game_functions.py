@@ -9,35 +9,51 @@ from barrier import Barrier
 from smoke import Smoke
 
 
-def check_keydown_events(event, ai_settings, screen, sounds, ship, bullets):
-    if event.key == pygame.K_RIGHT:
-        ship.moving_right = True
-    elif event.key == pygame.K_LEFT:
-        ship.moving_left = True
-    elif event.key == pygame.K_SPACE:
-        fire_bullet(ai_settings, screen, sounds, ship, bullets)
-    elif event.key == pygame.K_q:
-        sys.exit()
+def check_keydown_events(event, ai_settings, screen, sounds, ship, bullets, inputs=None):
+    if inputs is None:
+        if event.key == pygame.K_RIGHT:
+            ship.moving_right = True
+        elif event.key == pygame.K_LEFT:
+            ship.moving_left = True
+        if event.key == pygame.K_SPACE:
+            fire_bullet(ai_settings, screen, sounds, ship, bullets)
+        elif event.key == pygame.K_q:
+            sys.exit()
+
+    elif len(inputs) == 3:
+        if inputs[0] is True:
+            ship.moving_right = True
+        elif inputs[1] is True:
+            ship.moving_left = True
+        if inputs[2] is True:
+            fire_bullet(ai_settings, screen, sounds, ship, bullets)
 
 
-def check_keyup_events(event, ship):
-    if event.key == pygame.K_RIGHT:
-        ship.moving_right = False
-    elif event.key == pygame.K_LEFT:
-        ship.moving_left = False
+def check_keyup_events(event, ship, inputs=None):
+    if inputs is None:
+        if event.key == pygame.K_RIGHT:
+            ship.moving_right = False
+        elif event.key == pygame.K_LEFT:
+            ship.moving_left = False
+
+    elif len(inputs) == 3:
+        if inputs[0] is False:
+            ship.moving_right = False
+        elif inputs[1] is False:
+            ship.moving_left = False
 
 
 def check_events(ai_settings, screen, sounds, stats, sb, highscores, play_button, high_score_button,
-                 ship, aliens, bullets, barriers, alien_bullets, smokes):
+                 ship, aliens, bullets, barriers, alien_bullets, smokes, inputs=None):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
 
-        elif event.type == pygame.KEYDOWN:
-            check_keydown_events(event, ai_settings, screen, sounds, ship, bullets)
+        elif event.type == pygame.KEYDOWN or inputs is not None:
+            check_keydown_events(event, ai_settings, screen, sounds, ship, bullets, inputs)
 
-        elif event.type == pygame.KEYUP:
-            check_keyup_events(event, ship)
+        elif event.type == pygame.KEYUP or inputs is not None:
+            check_keyup_events(event, ship, inputs)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if not stats.game_active:
@@ -116,8 +132,6 @@ def update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets,
     if not stats.game_active:
         menu_screen(menu_bg, play_button, high_score_button)
 
-    pygame.display.flip()
-
 
 def update_bullets(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
                    bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer):
@@ -139,7 +153,10 @@ def update_bullets(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
 
 
 def check_bullet_ship_collisions(ship, alien_bullets):
-    collision = pygame.sprite.spritecollideany(ship, alien_bullets)
+    collision = False
+    for bullet in alien_bullets:
+        if pygame.sprite.collide_mask(ship, bullet):
+            collision = True
     if collision:
         ship.destroy()
 
