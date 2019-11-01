@@ -12,58 +12,77 @@ from timer import Timer
 from ufo import UFO
 import game_functions as gf
 
+pygame.init()
+clock = pygame.time.Clock()
 
-def run_game():
-    pygame.init()
-    clock = pygame.time.Clock()
 
-    highscores = HighScore()
-    ai_settings = Settings()
-    screen = pygame.display.set_mode((ai_settings.screen_width, ai_settings.screen_height))
-    pygame.display.set_caption("Alien Invasion")
-    sounds = Sound()
+class SpaceInvadersGame:
+    def __init__(self):
 
-    play_button = Button(screen, pygame.image.load('images/play_btn.png'), 850, 400)
-    high_score_button = Button(screen, pygame.image.load('images/high_score_btn.png'), 850, 600)
-    menu_bg = Button(screen,
-                     pygame.image.load('images/menu.png'), ai_settings.screen_width / 2, ai_settings.screen_height / 2)
-    stats = GameStats(ai_settings, highscores)
-    sb = Scoreboard(ai_settings, screen, sounds, stats)
+        self.scores = HighScore()
+        self.ai_settings = Settings()
+        self.screen = pygame.display.set_mode((self.ai_settings.screen_width,self.ai_settings.screen_height))
+        pygame.display.set_caption("Alien Invasion")
+        self.sounds = Sound()
 
-    ship = Ship(ai_settings, screen, sounds)
-    bullets = Group()
-    alien_bullets = Group()
-    aliens = Group()
-    ufo = UFO(ai_settings, screen, sounds)
-    barriers = Group()
-    smokes = Group()
+        self.play_button = Button(self.screen, pygame.image.load('images/play_btn.png'), 850, 400)
+        self.high_score_button = Button(self.screen, pygame.image.load('images/high_score_btn.png'), 850, 600)
+        self.menu_bg = Button(self.screen,
+                         pygame.image.load('images/menu.png'),self.ai_settings.screen_width / 2,self.ai_settings.screen_height / 2)
+        self.stats = GameStats(self.ai_settings, self.scores)
+        self.sb = Scoreboard(self.ai_settings, self.screen, self.sounds, self.stats)
 
-    gf.create_fleet(ai_settings, screen, sounds, aliens)
-    gf.create_barriers(ai_settings, screen, barriers)
+        self.ship = Ship(self.ai_settings,self.screen,self.sounds)
+        self.bullets = Group()
+        self.alien_bullets = Group()
+        self.aliens = Group()
+        self.ufo = UFO(self.ai_settings,self.screen,self.sounds)
+        self.barriers = Group()
+        self.smokes = Group()
+    
+        gf.create_fleet(self.ai_settings,self.screen,self.sounds, self.aliens)
+        gf.create_barriers(self.ai_settings,self.screen, self.barriers)
+    
+        # timers used for animation and event checking
+        self.alien_timer = Timer(self.ai_settings.alien_frame_factor)
+        self.smoke_timer = Timer(8)
+        self.ship_timer = Timer(4)
+        self.ufo_timer = Timer(self.ai_settings.alien_frame_factor * 5)
 
-    # timers used for animation and event checking
-    alien_timer = Timer(ai_settings.alien_frame_factor)
-    smoke_timer = Timer(8)
-    ship_timer = Timer(4)
-    ufo_timer = Timer(ai_settings.alien_frame_factor * 5)
+        self.stats.game_active = True
 
-    while True:
+    def frame_step(self, inputs=None):
+        gf.check_events(self.ai_settings, self.screen,self.sounds, self.stats, self.sb, self.scores, self.play_button, self.high_score_button,
+                        self.ship, self.aliens, self.bullets, self.barriers, self.alien_bullets, self.smokes, inputs)
+
+        if self.stats.game_active:
+            gf.update_timers(self.alien_timer, self.ufo_timer, self.ship_timer, self.smoke_timer)
+            gf.update_ship(self.stats, self.sb, self.scores, self.ship, self.aliens, self.ufo, self.bullets, self.alien_bullets, self.ship_timer, self.alien_timer)
+            if not self.ship.hit:
+                gf.update_bullets(self.ai_settings,self.screen,self.sounds, self.stats, self.sb,  self.ship, self.aliens, self.ufo,
+                                  self.bullets, self.barriers, self.alien_bullets, self.smokes, self.alien_timer, self.ufo_timer, self.smoke_timer)
+                gf.update_aliens(self.ai_settings,self.screen,self.sounds, self.ship, self.aliens, self.barriers, self.alien_bullets, self.alien_timer)
+                gf.update_ufo(self.ufo, self.ufo_timer)
+                gf.update_smokes(self.smokes, self.smoke_timer)
+
+        gf.update_screen(self.ai_settings, self.screen, self.stats, self.sb, self.ship, self.aliens, self.ufo, self.bullets, self.menu_bg,
+                         self.play_button, self.high_score_button, self.barriers, self.alien_bullets, self.smokes)
+
+        reward = self.stats.score
+        game_state = self.stats.game_active
+
+        if self.stats.game_active is False:
+            self.__init__()
+            reward = -1
+
+        image_data = pygame.surfarray.array3d(pygame.display.get_surface())
+        pygame.display.update()
+
         clock.tick(60)
-        gf.check_events(ai_settings, screen, sounds, stats, sb, highscores, play_button, high_score_button,
-                        ship, aliens, bullets, barriers, alien_bullets, smokes)
-
-        if stats.game_active:
-            gf.update_timers(alien_timer, ufo_timer, ship_timer, smoke_timer)
-            gf.update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, ship_timer, alien_timer)
-            if not ship.hit:
-                gf.update_bullets(ai_settings, screen, sounds, stats, sb,  ship, aliens, ufo,
-                                  bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer)
-                gf.update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bullets, alien_timer)
-                gf.update_ufo(ufo, ufo_timer)
-                gf.update_smokes(smokes, smoke_timer)
-
-        gf.update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets, menu_bg,
-                         play_button, high_score_button, barriers, alien_bullets, smokes)
+        return reward, image_data, game_state
 
 
-run_game()
+if __name__ == '__main__':
+    game = SpaceInvadersGame()
+    while True:
+        game.frame_step()
