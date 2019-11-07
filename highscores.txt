@@ -1,4 +1,4 @@
-0,TST
+50,Player
 0,TST
 0,TST
 0,TST

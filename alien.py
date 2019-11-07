@@ -26,7 +26,7 @@ class Alien(Sprite):
 
         # alien's type, used for list indexing and event checking
         self.type = alien_type
-        self.image = alien_a[self.type]
+        self.image = alien_b[self.type]
 
         # checks parameter alt_frame, if True will start the alien from its 2nd animation state
         if alt_frame:

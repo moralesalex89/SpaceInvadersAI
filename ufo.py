@@ -58,8 +58,9 @@ class UFO:
             self.rect.left = self.ai_settings.screen_width
             self.state = 2
 
-    def update(self):
-        self.rotate()
+    def update(self, simplify=False):
+        if not simplify:
+            self.rotate()
         if self.state == 1 and self.rect.left < self.ai_settings.screen_width:
             self.rect.x += self.ai_settings.ufo_speed_factor
         elif self.state == 2 and self.rect.right > 0:

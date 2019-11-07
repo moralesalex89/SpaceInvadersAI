@@ -114,7 +114,7 @@ def press_play_button(ai_settings, screen, sounds, stats, sb,
 
 
 def update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets,
-                  menu_bg, play_button, high_score_button, barriers, alien_bullets, smokes):
+                  menu_bg, play_button, high_score_button, barriers, alien_bullets, smokes, simplify=False):
     if stats.game_active:
         screen.fill(ai_settings.bg_color)
         ship.blitme()
@@ -122,21 +122,23 @@ def update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets,
         ufo.blitme()
         barriers.draw(screen)
         alien_bullets.draw(screen)
-        smokes.draw(screen)
+        if not simplify:
+            smokes.draw(screen)
 
         for bullet in bullets.sprites():
             bullet.blitme()
 
-        sb.show_score()
+        if not simplify:
+            sb.show_score()
 
     if not stats.game_active:
         menu_screen(menu_bg, play_button, high_score_button)
 
 
 def update_bullets(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
-                   bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer):
-    bullets.update()
-    alien_bullets.update()
+                   bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer, simplify=False):
+    bullets.update(simplify)
+    alien_bullets.update(simplify)
 
     for bullet in bullets.copy():
         if bullet.rect.bottom <= 0:
@@ -307,15 +309,16 @@ def alien_attack(ai_settings, screen, aliens, alien_bullets):
         attacker_count += 1
 
 
-def update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bullets, alien_timer):
+def update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bullets, alien_timer, simplify):
     if len(aliens) > 0:
         check_fleet_edges(ai_settings, aliens)
         aliens.update()
 
         # animate all live aliens with each tick
         if alien_timer.check():
-            for alien in aliens:
-                alien.rotate()
+            if not simplify:
+                for alien in aliens:
+                    alien.rotate()
             alien_attack(ai_settings, screen, aliens, alien_bullets)
             sounds.move_play()
             # decreases the refresh rate based on how many aliens are remaining, speeds up alien animations and firerate
@@ -341,7 +344,7 @@ def update_smokes(smokes, smoke_timer):
             smoke.rotate()
 
 
-def update_ufo(ufo, ufo_timer):
+def update_ufo(ufo, ufo_timer, simplify=False):
     # if ufo has already been destroyed in this level return
     if ufo.hit is True:
         return
@@ -357,7 +360,7 @@ def update_ufo(ufo, ufo_timer):
 
     # if ufo is in active state update ufo
     elif ufo.active():
-        ufo.update()
+        ufo.update(simplify)
 
 
 def check_high_score(stats, sb):

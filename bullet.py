@@ -36,13 +36,14 @@ class Bullet(Sprite):
             else:
                 self.speed_factor = ai_settings.alien_bullet_speed_factor
 
-        def update(self):
+        def update(self, simplify):
             if self.bullet_type == 1:
                 self.y -= self.speed_factor
             else:
                 self.y += self.speed_factor
             self.rect.y = self.y
-            self.rotate()
+            if not simplify:
+                self.rotate()
 
         def rotate(self):
             if self.frame == 0 or self.frame >= 8:
