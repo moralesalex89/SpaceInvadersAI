@@ -27,7 +27,7 @@ class HighScore:
                 hs_w.writelines(item)
                 hs_w.truncate()
 
-    def print(self):
+    def hs_print(self):
         print(self.hs_list)
 
     def check_place(self, score):

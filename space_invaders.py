@@ -1,6 +1,11 @@
 import pygame
 from pygame.sprite import Group
 
+from PIL import ImageGrab
+from cv2 import *
+import numpy
+from scipy import misc
+
 from highscore import HighScore
 from settings import Settings
 from game_stats import GameStats
@@ -76,17 +81,38 @@ class SpaceInvadersGame:
             reward = -1
 
         if inputs is not None:
-            image_data = pygame.surfarray.array3d(pygame.display.get_surface())
+            img = self.screen
+            image_data = pygame.surfarray.array3d(img)
+            image_data = convert_image(image_data)
+            image_data = cv2.rotate(image_data, cv2.ROTATE_90_CLOCKWISE)
+            image_data = cv2.flip(image_data, 1)
+            imshow("AI's Screen", image_data)
         else:
-            image_data = None
+#            image_data = None
+            img = self.screen
+            image_data = pygame.surfarray.array3d(img)
+            image_data = convert_image(image_data)
+            image_data = cv2.rotate(image_data, cv2.ROTATE_90_CLOCKWISE)
+            image_data = cv2.flip(image_data, 1)
+            imshow("AI's Screen", image_data)
+
         pygame.display.update()
 
         clock.tick(60)
         return reward, image_data, game_state
 
 
+def convert_image(image_data):
+    new_image_data = cv2.resize(image_data, (200, 160))
+    new_image_data = cv2.cvtColor(new_image_data, cv2.COLOR_BGR2GRAY)
+    new_image_data = cv2.Canny(new_image_data, threshold1=100, threshold2=200)
+    #new_image_data = cv2.resize(image_data, (0, 0), fx=0.5, fy=0.5)
+    #new_image_data = cv2.cvtColor(new_image_data, cv2.COLOR_BGR2GRAY)
+    return new_image_data
+
+
 if __name__ == '__main__':
     game = SpaceInvadersGame()
     status = True
     while status:
-        status = game.frame_step()[2]
+        status = game.frame_step(simplify=True)[2]

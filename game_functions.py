@@ -283,7 +283,7 @@ def ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, a
         alien_timer.reset()
         ufo.reset()
         highscores.check_place(int(round(stats.score, -1)))
-        highscores.print()
+        highscores.hs_print()
         sleep(1)
         stats.game_active = False
         pygame.mouse.set_visible(True)
@@ -309,7 +309,7 @@ def alien_attack(ai_settings, screen, aliens, alien_bullets):
         attacker_count += 1
 
 
-def update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bullets, alien_timer, simplify):
+def update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bullets, alien_timer, simplify=False):
     if len(aliens) > 0:
         check_fleet_edges(ai_settings, aliens)
         aliens.update()
@@ -325,7 +325,7 @@ def update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bul
             # max speed is 2x faster than the default
             alien_timer.update(int((alien_timer.default * 1.0 / 2.0)
                                    + ((1.0 / 2.0 * alien_timer.default)
-                                      * (len(aliens) / (ai_settings.alien_fleet_cols * ai_settings.alien_fleet_rows)))))
+                                      * (float(len(aliens)) / float(ai_settings.alien_fleet_cols * ai_settings.alien_fleet_rows)))))
 
         # checks if any aliens have have collided with the ship
         if pygame.sprite.spritecollideany(ship, aliens):

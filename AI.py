@@ -2,16 +2,16 @@ import numpy
 import time
 import random
 import cv2
+from PIL import ImageGrab
 from collections import deque
 
 import keras
 from keras import *
 
 from space_invaders import SpaceInvadersGame
-SpaceInvadersGame = SpaceInvadersGame()
 
-image_cols = 40
-image_rows = 20
+image_cols = 160
+image_rows = 200
 stack_count = 4
 # move left, move right, move left+shoot, move right+shoot, shoot, do nothing
 action_count = 6
@@ -27,14 +27,18 @@ FRAME_PER_ACTION = 1
 
 
 def convert_image(image_data):
-    new_image_data = cv2.cvtColor(cv2.resize(image_data, (image_cols, image_rows)), cv2.COLOR_BGR2GRAY)
-    ret, new_image_data = cv2.threshold(new_image_data, 1, 255, cv2.THRESH_BINARY)
+    new_image_data = numpy.array(image_data)
+    new_image_data = cv2.resize(new_image_data, (0, 0), fx=0.15, fy=0.10)
+    new_image_data = new_image_data[2:38, 10:50]
+    new_image_data = cv2.cvtColor(new_image_data, cv2.COLOR_BGR2GRAY)
+    ret, new_image_data = cv2.threshold(new_image_data, 0, 255, cv2.THRESH_BINARY)
+    new_image_data = cv2.Canny(new_image_data, threshold1=100, threshold2= 200)
     return new_image_data
 
 
 def create_model():
     model = Sequential()
-    model.add(keras.layers.Conv2D(32, (8, 8), strides=(4, 4), padding='same', input_shape=(image_cols, image_rows, stack_count)))
+    model.add(keras.layers.Conv2D(32, (8, 8), strides=(4, 4), padding='same', input_shape=(image_rows, image_cols, stack_count)))
     model.add(keras.layers.Activation('relu'))
     model.add(keras.layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same'))
     model.add(keras.layers.Activation('relu'))
@@ -49,7 +53,7 @@ def create_model():
     return model
 
 
-def play_frame(action, simplify=True):
+def play_frame(game, action, simplify=True):
     inputs = [False, False, False] # [move right, move left, fire bullet]
     # do nothing
     if action[0] == 1:
@@ -64,21 +68,22 @@ def play_frame(action, simplify=True):
     if action[3] or action[4] or action[5]:
         inputs[2] = True
 
-    reward, image, active = SpaceInvadersGame.frame_step(simplify=simplify, inputs=inputs)
-    converted_image = convert_image(image)
+    reward, image, active = game.frame_step(simplify=simplify, inputs=inputs)
+    #converted_image = convert_image(image)
 
-    return reward, converted_image, active
+    return reward, image, active
 
 
-def train_net(model, active=True):
+def train_net(game, model, active=True):
     D = deque()
-    action = False ** action_count
+    action = [False, False, False, False, False, False]
     action[0] = True
 
-    reward, image, active = play_frame(action=action, simplify=True)
-    c_image = convert_image(image)
-    c_image.reshape(1, 1, image_rows, image_cols)
-    stacked_image = numpy.stack((c_image, c_image, c_image, c_image), axis=2)
+    reward, image, active = play_frame(game=game, action=action, simplify=True)
+    #image = convert_image(image)
+    stacked_image = numpy.stack((image, image, image, image), axis=2)
+    print stacked_image.shape
+    stacked_image = stacked_image.reshape(1, image_rows, image_cols, stack_count)
 
     observe = OBSERVATION
     epsilon = INITIAL_EPSILON
@@ -89,22 +94,25 @@ def train_net(model, active=True):
         Q_sa = 0
         action_index = 0
         reward = 0
-        current_action = False ** action_count
+        current_action = [False, False, False, False, False, False]
 
         if random.random() <= epsilon:
             action_index = random.randrange(action_count)
-            current_action[action_index] = 1
+            current_action[action_index] = True
         else:
             q = model.predict(stacked_image)
             max_Q = numpy.argmax(q)
             action_index = max_Q
-            current_action[action_index] = 1
+            current_action[action_index] = True
+
+        print(action_index)
 
         if epsilon > FINAL_EPSILON and t > observe:
             epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        reward, c_image, active = play_frame(action=action, simplify=True)
+        reward, c_image, active = play_frame(game=game, action=current_action, simplify=True)
         last_time = time.time()
+        #c_image = convert_image(c_image)
         c_image = c_image.reshape(1, c_image.shape[0], c_image.shape[1], 1)
         c_stacked_image = numpy.append(c_image, stacked_image[:, :, :, :3], axis=3)
 
@@ -119,7 +127,7 @@ def train_net(model, active=True):
 
 
 def train_batch(minibatch, model, Q_sa, loss):
-    inputs = numpy.zeros((BATCH, image_rows, image_cols, stack_count), dtype=bool)
+    inputs = numpy.zeros((BATCH, image_cols, image_rows, stack_count), dtype=bool)
     targets = numpy.zeros((inputs.shape[0], action_count))
 
     for i in range(0, len(minibatch)):
@@ -142,7 +150,7 @@ def train_batch(minibatch, model, Q_sa, loss):
 def playGame(observe=False):
     game = SpaceInvadersGame()
     model = create_model()
-    train_net(model)
+    train_net(game=game, model=model)
 
 
 playGame()
