@@ -50,8 +50,8 @@ class SpaceInvadersGame:
     
         # timers used for animation and event checking
         self.alien_timer = Timer(self.ai_settings.alien_frame_factor)
-        self.smoke_timer = Timer(8)
-        self.ship_timer = Timer(4)
+        self.smoke_timer = Timer(self.ai_settings.smoke_timer)
+        self.ship_timer = Timer(self.ai_settings.ship_timer)
         self.ufo_timer = Timer(self.ai_settings.alien_frame_factor * 5)
         self.bullet_delay = 0
 
@@ -115,7 +115,7 @@ class SpaceInvadersGame:
 
         pygame.display.update()
 
-        clock.tick(60)
+        clock.tick(self.ai_settings.fps)
         if reward == -1:
             self.inactive -= 1
         print(reward, self.inactive)
