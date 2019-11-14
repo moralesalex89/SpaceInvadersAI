@@ -1,3 +1,6 @@
+HIGH_SCORE_PLACES = 1000
+
+
 class HighScore:
     def __init__(self):
         self.hs_list = []
@@ -30,7 +33,7 @@ class HighScore:
     def hs_print(self):
         print(self.hs_list)
 
-    def check_place(self, score):
+    def check_place(self, score, name="Player"):
         pos = 0
         for rank in self.hs_list:
             if score <= int(rank[0]):
@@ -38,11 +41,11 @@ class HighScore:
             else:
                 break
 
-        entry = [str(score), 'Player']
+        entry = [str(score), name]
         self.hs_list.insert(pos, entry)
         self.hs_list.pop()
 
-        if pos < 10:
+        if pos < HIGH_SCORE_PLACES:
             self.save_scores()
             self.read_list()
 

@@ -57,7 +57,7 @@ class SpaceInvadersGame:
 
         self.stats.game_active = True
 
-    def frame_step(self, simplify=False, inputs=None):
+    def frame_step(self, simplify=False, inputs=None, name="Player"):
         init_bullet_count = len(self.bullets)
         gf.check_events(self.ai_settings, self.screen, self.sounds, self.stats, self.sb, self.scores, self.play_button, self.high_score_button,
                         self.ship, self.aliens, self.ufo, self.bullets, self.bullet_delay, self.barriers, self.alien_bullets, self.smokes, inputs)
@@ -87,10 +87,12 @@ class SpaceInvadersGame:
 
         game_state = self.stats.game_active
 
-        reward = 0
+        reward = -1
         if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
             reward = 1
-        elif bullet_count == 0 and ship_pos == self.ship.rect.left:
+        elif gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens):
+            reward = 0
+        if gf.ship_in_bullet_path(self.ship, self.alien_bullets):
             reward = -1
         if bullet_count > len(self.bullets) and reward != 1:
             reward = -1
@@ -100,7 +102,7 @@ class SpaceInvadersGame:
             reward = -1
             self.inactive = 60
             self.bullet_delay = 0
-            self.scores.check_place(int(round(self.stats.score, -1)))
+            self.scores.check_place(int(round(self.stats.score, -1)), name)
             gf.restart(self.ai_settings, self.screen, self.sounds, self.stats, self.sb,
                       self.ship, self.aliens, self.ufo, self.bullets, self.barriers, self.alien_bullets, self.smokes)
 

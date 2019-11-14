@@ -56,7 +56,7 @@ def create_model():
     return model
 
 
-def play_frame(game, action, simplify=True):
+def play_frame(game, action, t, simplify=True):
     inputs = [0, 0, 0] # [move right, move left, fire bullet]
     # do nothing
     if action[0] == 1:
@@ -72,17 +72,22 @@ def play_frame(game, action, simplify=True):
         inputs[2] = 1
 
     print(inputs)
-    reward, image, active = game.frame_step(simplify=simplify, inputs=inputs)
+    name = "AI_at_time_" + str(t)
+    reward, image, active = game.frame_step(simplify=simplify, inputs=inputs, name=name)
 
     return reward, image, active
 
 
 def train_net(game, model, observe=False):
     D = load_obj("D")
+#    D = deque()
     action = numpy.zeros(action_count)
     action[0] = 1
 
-    reward, image, active = play_frame(game=game, action=action, simplify=True)
+    t = load_obj("time")
+    #    t = 0
+
+    reward, image, active = play_frame(game=game, action=action, t=t, simplify=True)
     stacked_image = numpy.stack((image, image, image, image), axis=2)
     stacked_image = stacked_image.reshape(1, image_rows, image_cols, stack_count)
 
@@ -95,9 +100,8 @@ def train_net(game, model, observe=False):
     else:
         OBSERVE = OBSERVATION
         epsilon = load_obj("epsilon")
+#        epsilon = INITIAL_EPSILON
         model.load_weights("models\model.h5")
-
-    t = load_obj("time")
 
     while True:
         loss = 0
@@ -118,10 +122,11 @@ def train_net(game, model, observe=False):
         if epsilon > FINAL_EPSILON and t > OBSERVE:
             epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        reward, c_image, active = play_frame(game=game, action=current_action, simplify=True)
+        reward, c_image, active = play_frame(game=game, action=current_action, t=t, simplify=True)
         last_time = time.time()
         c_image = c_image.reshape(1, c_image.shape[0], c_image.shape[1], 1)
         c_stacked_image = numpy.append(c_image, stacked_image[:, :, :, :3], axis=3)
+        initial_stacked_image = c_stacked_image
 
         D.append((stacked_image, action_index, reward, c_stacked_image, active))
         if len(D) > REPLAY_MEMORY:
@@ -129,7 +134,11 @@ def train_net(game, model, observe=False):
 
         if t > OBSERVE:
             train_batch(random.sample(D, BATCH), model, Q_sa, loss)
-        stacked_image = c_stacked_image
+        if not active:
+            stacked_image = initial_stacked_image
+        else:
+            stacked_image = c_stacked_image
+
         t += 1
 
         if t % 1000 == 0:

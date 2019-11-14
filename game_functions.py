@@ -137,7 +137,7 @@ def update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets,
         if not simplify:
             sb.show_score()
 
-    if not stats.game_active:
+    if not stats.game_active and not simplify:
         menu_screen(menu_bg, play_button, high_score_button)
 
 
@@ -399,7 +399,39 @@ def update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets
             if ship.play_death():
                 ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer)
         else:
-            ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer)
+            stats.game_active = False
+#            ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer)
+
+
+def ship_in_invader_range(ai_settings, ship, aliens):
+    init = True
+    for alien in aliens:
+        if init:
+            closest_alien = alien
+            init = False
+            alien_center = alien.centerx
+        elif abs(ship.centerx - alien.centerx) <= abs(ship.centerx - alien_center):
+            closest_alien = alien
+
+    min_x = closest_alien.left - ai_settings.alien_width
+    max_x = closest_alien.right + ai_settings.alien_width
+    if min_x < ship.centerx < max_x:
+        return True
+    elif min_x > ship.centerx and ship.moving_right:
+        return True
+    elif max_x < ship.centerx and ship.moving_left:
+        return True
+    else:
+        return False
+
+
+def ship_in_bullet_path(ship, alien_bullets):
+    for bullet in alien_bullets:
+        if ship.rect.left < bullet.rect.right and ship.rect.right > bullet.rect.left:
+            if abs(ship.rect.top - bullet.rect.bottom) < ship.rect.height * 2:
+                if not (ship.moving_right or ship.moving_left):
+                    return True
+    return False
 
 
 def menu_screen(menu_bg, play_button, high_score_button):
