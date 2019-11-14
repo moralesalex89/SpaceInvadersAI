@@ -96,6 +96,7 @@ class SpaceInvadersGame:
             reward = -1
 
         if self.stats.game_active is False or self.inactive <= 0:
+            self.stats.game_active = True
             reward = -1
             self.inactive = 60
             self.bullet_delay = 0

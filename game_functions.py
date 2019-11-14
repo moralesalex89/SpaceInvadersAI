@@ -236,7 +236,6 @@ def fire_bullet(ai_settings, screen, sounds, ship, bullets, bullet_delay):
         sounds.laser_play()
 
 
-
 def create_alien(ai_settings, screen, sounds, aliens, alien_number, row_number, alien_type, alt_frame):
     alien = Alien(ai_settings, screen, sounds, alien_type, alt_frame)
     alien.x = \
