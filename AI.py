@@ -169,10 +169,22 @@ def train_batch(minibatch, model, Q_sa, loss):
     loss += model.train_on_batch(inputs, targets)
 
 
+def init_objs():
+    D = deque()
+    t = 0
+    epsilon = INITIAL_EPSILON
+    save_obj(D, "D")
+    save_obj(t, "time")
+    save_obj(epsilon, "epsilon")
+    model = create_model()
+    model.save_weights("models/model.h5", overwrite=True)
+
+
 def playGame(observe=False):
     game = SpaceInvadersGame()
     model = create_model()
     train_net(game=game, model=model, observe=observe)
 
 
+#init_objs()
 playGame(observe=False)

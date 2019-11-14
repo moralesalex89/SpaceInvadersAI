@@ -409,17 +409,17 @@ def ship_in_invader_range(ai_settings, ship, aliens):
         if init:
             closest_alien = alien
             init = False
-            alien_center = alien.centerx
-        elif abs(ship.centerx - alien.centerx) <= abs(ship.centerx - alien_center):
+            alien_center = alien.rect.centerx
+        elif abs(ship.rect.centerx - alien.rect.centerx) <= abs(ship.rect.centerx - alien_center):
             closest_alien = alien
 
-    min_x = closest_alien.left - ai_settings.alien_width
-    max_x = closest_alien.right + ai_settings.alien_width
-    if min_x < ship.centerx < max_x:
+    min_x = closest_alien.rect.left - ai_settings.alien_width
+    max_x = closest_alien.rect.right + ai_settings.alien_width
+    if min_x < ship.rect.centerx < max_x:
         return True
-    elif min_x > ship.centerx and ship.moving_right:
+    elif min_x > ship.rect.centerx and ship.moving_right:
         return True
-    elif max_x < ship.centerx and ship.moving_left:
+    elif max_x < ship.rect.centerx and ship.moving_left:
         return True
     else:
         return False
