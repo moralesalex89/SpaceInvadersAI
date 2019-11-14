@@ -403,23 +403,24 @@ def update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets
 #            ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer)
 
 
-def ship_in_invader_range(ai_settings, ship, aliens):
+def ship_in_invader_range(ai_settings, ship, aliens, ufo):
     init = True
     for alien in aliens:
         if init:
             closest_alien = alien
             init = False
-            alien_center = alien.rect.centerx
-        elif abs(ship.rect.centerx - alien.rect.centerx) <= abs(ship.rect.centerx - alien_center):
+        elif abs(ship.center - alien.rect.centerx) < abs(ship.center - closest_alien.rect.centerx):
             closest_alien = alien
+#    if ufo.active():
+#        closest_alien = ufo
 
-    min_x = closest_alien.rect.left - ai_settings.alien_width
-    max_x = closest_alien.rect.right + ai_settings.alien_width
-    if min_x < ship.rect.centerx < max_x:
+    min_x = closest_alien.rect.left - ship.rect.width
+    max_x = closest_alien.rect.right + ship.rect.width
+    if min_x <= ship.rect.right and ship.rect.left <= max_x:
         return True
-    elif min_x > ship.rect.centerx and ship.moving_right:
+    elif min_x > ship.rect.right and ship.moving_right:
         return True
-    elif max_x < ship.rect.centerx and ship.moving_left:
+    elif max_x < ship.rect.left and ship.moving_left:
         return True
     else:
         return False
@@ -428,9 +429,8 @@ def ship_in_invader_range(ai_settings, ship, aliens):
 def ship_in_bullet_path(ship, alien_bullets):
     for bullet in alien_bullets:
         if ship.rect.left < bullet.rect.right and ship.rect.right > bullet.rect.left:
-            if abs(ship.rect.top - bullet.rect.bottom) < ship.rect.height * 2:
-                if not (ship.moving_right or ship.moving_left):
-                    return True
+            if abs(bullet.rect.bottom - ship.rect.top) <= ship.rect.height:
+                return True
     return False
 
 

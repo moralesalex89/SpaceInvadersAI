@@ -43,7 +43,7 @@ class SpaceInvadersGame:
         self.ufo = UFO(self.ai_settings, self.screen, self.sounds)
         self.barriers = Group()
         self.smokes = Group()
-        self.inactive = 60
+        self.inactive = self.ai_settings.fps * 10
 
         gf.create_fleet(self.ai_settings, self.screen, self.sounds, self.aliens)
         gf.create_barriers(self.ai_settings, self.screen, self.barriers)
@@ -85,22 +85,34 @@ class SpaceInvadersGame:
         gf.update_screen(self.ai_settings, self.screen, self.stats, self.sb, self.ship, self.aliens, self.ufo, self.bullets, self.menu_bg,
                          self.play_button, self.high_score_button, self.barriers, self.alien_bullets, self.smokes, simplify)
 
-        game_state = self.stats.game_active
+        pygame.display.update()
 
-        reward = -1
-        if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
-            reward = 1
-        elif gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens):
-            reward = 0
+        reward = 0
+        if bullet_count > len(self.bullets):
+            if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
+                reward += 1
+            else:
+                reward -= 1
+        if not gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens, self.ufo):
+            reward -= 1
         if gf.ship_in_bullet_path(self.ship, self.alien_bullets):
+            reward -= 1
+        if reward < 0:
             reward = -1
-        if bullet_count > len(self.bullets) and reward != 1:
-            reward = -1
+
+        if alien_count < len(self.aliens):
+            game_state = False
+            reward = 1
+            self.inactive = 240
+            self.bullet_delay = 0
+
+        else:
+            game_state = self.stats.game_active
 
         if self.stats.game_active is False or self.inactive <= 0:
             self.stats.game_active = True
             reward = -1
-            self.inactive = 60
+            self.inactive = 240
             self.bullet_delay = 0
             self.scores.check_place(int(round(self.stats.score, -1)), name)
             gf.restart(self.ai_settings, self.screen, self.sounds, self.stats, self.sb,
@@ -111,26 +123,12 @@ class SpaceInvadersGame:
             if len(inputs) == 3:
                 img = self.screen
                 image_data = pygame.surfarray.array3d(img)
-                image_data = convert_image(image_data)
-                image_data = cv2.rotate(image_data, cv2.ROTATE_90_CLOCKWISE)
-                image_data = cv2.flip(image_data, 1)
-                imshow("AI's Screen", image_data)
-
-        pygame.display.update()
 
         clock.tick(self.ai_settings.fps)
-        if reward == -1:
-            self.inactive -= 1
+        self.inactive += reward
         print(reward, self.inactive)
 
         return reward, image_data, game_state
-
-
-def convert_image(image_data):
-    new_image_data = cv2.resize(image_data, (200, 160))
-    new_image_data = cv2.cvtColor(new_image_data, cv2.COLOR_BGR2GRAY)
-    new_image_data = cv2.Canny(new_image_data, threshold1=100, threshold2=200)
-    return new_image_data
 
 
 if __name__ == '__main__':

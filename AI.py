@@ -1,7 +1,7 @@
 import numpy
 import time
 import random
-import cv2
+from cv2 import *
 from PIL import ImageGrab
 from collections import deque
 import pickle
@@ -20,12 +20,12 @@ stack_count = 4
 action_count = 6
 
 GAMMA = 0.99
-OBSERVATION = 5000
+OBSERVATION = 1000
 EXPLORE = 100000
 INITIAL_EPSILON = 0.1
 FINAL_EPSILON = 0.0001
 REPLAY_MEMORY = 50000
-BATCH = 32
+BATCH = 16
 FRAME_PER_ACTION = 1
 
 
@@ -74,7 +74,7 @@ def play_frame(game, action, t, simplify=True):
     print(inputs)
     name = "AI_at_time_" + str(t)
     reward, image, active = game.frame_step(simplify=simplify, inputs=inputs, name=name)
-
+    image = prepare_image(image)
     return reward, image, active
 
 
@@ -92,11 +92,11 @@ def train_net(game, model, observe=False):
     stacked_image = stacked_image.reshape(1, image_rows, image_cols, stack_count)
 
     if observe:
-        OBSERVE = 5000
+        OBSERVE = 9999999999
         epsilon = FINAL_EPSILON
         model.load_weights("models\model.h5")
         adam = keras.optimizers.Adam(1e-4)
-        model.compile(loss='mse, optimizer=adam')
+        model.compile(loss='mse', optimizer=adam)
     else:
         OBSERVE = OBSERVATION
         epsilon = load_obj("epsilon")
@@ -178,6 +178,21 @@ def init_objs():
     save_obj(epsilon, "epsilon")
     model = create_model()
     model.save_weights("models/model.h5", overwrite=True)
+
+
+def prepare_image(image_data):
+    image_data = convert_image(image_data)
+    image_data = cv2.rotate(image_data, cv2.ROTATE_90_CLOCKWISE)
+    image_data = cv2.flip(image_data, 1)
+    imshow("AI's Screen", image_data)
+    return image_data
+
+
+def convert_image(image_data):
+    new_image_data = cv2.resize(image_data, (200, 160))
+    new_image_data = cv2.cvtColor(new_image_data, cv2.COLOR_BGR2GRAY)
+    new_image_data = cv2.Canny(new_image_data, threshold1=100, threshold2=200)
+    return new_image_data
 
 
 def playGame(observe=False):

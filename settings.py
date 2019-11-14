@@ -6,10 +6,10 @@ class Settings:
         self.bg_color = (35, 35, 35)
         self.fps = 12
 
-        self.ship_speed_factor = round(5 * 60 / self.fps)
+        self.ship_speed_factor = 5 * 60 / self.fps
         self.ship_limit = 0
 
-        self.bullet_speed_factor = round(10 * 60 / self.fps)
+        self.bullet_speed_factor = 10 * 60 / self.fps
         self.bullet_width = 3
         self.bullet_height = 15
         self.bullet_color = 60, 60, 60
@@ -20,17 +20,17 @@ class Settings:
         self.alien_points_b = 20
         self.alien_points_c = 10
         self.alien_points_ufo = 200
-        self.alien_bullet_speed_factor = round(5 * 60 / self.fps)
+        self.alien_bullet_speed_factor = 5 * 60 / self.fps
         self.alien_space_factor = 25
         self.alien_fleet_cols = 11
         self.alien_fleet_rows = 5
         self.alien_width = 60
         self.alien_height = 40
         self.alien_frame_factor = self.fps
-        self.alien_speed_factor = round(0.5 * 60 / self.fps)
+        self.alien_speed_factor = 0.5 * 60 / self.fps
         self.fleet_drop_speed = self.alien_space_factor + self.alien_height
         self.fleet_direction = 1
-        self.ufo_speed_factor = round(1 * 60 / self.fps)
+        self.ufo_speed_factor = 1 * 60 / self.fps
         self.alien_start_pos_x = (self.screen_width - (self.alien_width * self.alien_fleet_cols)
                                   - (self.alien_space_factor * self.alien_fleet_cols)) / 2
         self.alien_start_pos_y = 95
@@ -51,10 +51,10 @@ class Settings:
         self.initialize_dynamic_settings()
 
     def initialize_dynamic_settings(self):
-        self.ship_speed_factor = round(5 * 60 / self.fps)
-        self.ufo_speed_factor = round(1 * 60 / self.fps)
-        self.bullet_speed_factor = round(10 * 60 / self.fps)
-        self.alien_speed_factor = round(0.5 * 60 / self.fps)
+        self.ship_speed_factor = 3 * 60 / self.fps
+        self.ufo_speed_factor = 1 * 60 / self.fps
+        self.bullet_speed_factor = 10 * 60 / self.fps
+        self.alien_speed_factor = 0.5 * 60 / self.fps
         self.alien_frame_factor = self.fps
         self.fleet_direction = 1
         self.alien_points_a = 40
