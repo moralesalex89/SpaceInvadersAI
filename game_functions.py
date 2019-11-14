@@ -9,60 +9,58 @@ from barrier import Barrier
 from smoke import Smoke
 
 
-def check_keydown_events(event, ai_settings, screen, sounds, ship, bullets, inputs=None):
-    if inputs is None:
-        if event.key == pygame.K_RIGHT:
-            ship.moving_right = True
-        elif event.key == pygame.K_LEFT:
-            ship.moving_left = True
-        if event.key == pygame.K_SPACE:
-            fire_bullet(ai_settings, screen, sounds, ship, bullets)
-        elif event.key == pygame.K_q:
-            sys.exit()
-
-    elif len(inputs) == 3:
-        if inputs[0] is True:
-            ship.moving_right = True
-        elif inputs[1] is True:
-            ship.moving_left = True
-        if inputs[2] is True:
-            fire_bullet(ai_settings, screen, sounds, ship, bullets)
+def check_keydown_events(event, ai_settings, screen, sounds, ship, bullets, bullet_delay):
+    if event.key == pygame.K_RIGHT:
+        ship.moving_right = True
+    elif event.key == pygame.K_LEFT:
+        ship.moving_left = True
+    if event.key == pygame.K_SPACE:
+        fire_bullet(ai_settings, screen, sounds, ship, bullets, bullet_delay)
+    elif event.key == pygame.K_q:
+        sys.exit()
 
 
-def check_keyup_events(event, ship, inputs=None):
-    if inputs is None:
-        if event.key == pygame.K_RIGHT:
-            ship.moving_right = False
-        elif event.key == pygame.K_LEFT:
-            ship.moving_left = False
-
-    elif len(inputs) == 3:
-        if inputs[0] is False:
-            ship.moving_right = False
-        elif inputs[1] is False:
-            ship.moving_left = False
+def check_keyup_events(event, ship):
+    if event.key == pygame.K_RIGHT:
+        ship.moving_right = False
+    elif event.key == pygame.K_LEFT:
+        ship.moving_left = False
 
 
 def check_events(ai_settings, screen, sounds, stats, sb, highscores, play_button, high_score_button,
-                 ship, aliens, bullets, barriers, alien_bullets, smokes, inputs=None):
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            sys.exit()
+                 ship, aliens, ufo, bullets, bullet_delay, barriers, alien_bullets, smokes, inputs=None):
+    pygame.event.pump()
+    if inputs is None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
 
-        elif event.type == pygame.KEYDOWN or inputs is not None:
-            check_keydown_events(event, ai_settings, screen, sounds, ship, bullets, inputs)
+            elif event.type == pygame.KEYDOWN:
+                check_keydown_events(event, ai_settings, screen, sounds, ship, bullets, bullet_delay)
 
-        elif event.type == pygame.KEYUP or inputs is not None:
-            check_keyup_events(event, ship, inputs)
+            elif event.type == pygame.KEYUP:
+                check_keyup_events(event, ship)
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if not stats.game_active:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                if play_button.press(mouse_x, mouse_y):
-                    press_play_button(ai_settings, screen, sounds, stats, sb, play_button, ship,
-                                      aliens, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y)
-                elif high_score_button.press(mouse_x, mouse_y):
-                    press_high_score_button(ai_settings, screen, highscores)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if not stats.game_active:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    if play_button.press(mouse_x, mouse_y):
+                        press_play_button(ai_settings, screen, sounds, stats, sb, play_button, ship,
+                                          aliens, ufo, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y)
+                    elif high_score_button.press(mouse_x, mouse_y):
+                        press_high_score_button(ai_settings, screen, highscores)
+
+    elif len(inputs) == 3:
+        if inputs[0] == 1:
+            ship.moving_right = True
+        else:
+            ship.moving_right = False
+        if inputs[1] == 1:
+            ship.moving_left = True
+        else:
+            ship.moving_left = False
+        if inputs[2] == 1:
+            fire_bullet(ai_settings, screen, sounds, ship, bullets, bullet_delay)
 
 
 def press_high_score_button(ai_settings, screen, highscores):
@@ -88,29 +86,37 @@ def press_high_score_button(ai_settings, screen, highscores):
     sleep(3)
 
 
+def restart(ai_settings, screen, sounds, stats, sb,
+                      ship, aliens, ufo, bullets, barriers, alien_bullets, smokes):
+    ai_settings.initialize_dynamic_settings()
+    pygame.mouse.set_visible(False)
+    stats.reset_stats()
+    stats.game_active = True
+
+    sb.prep_score()
+    sb.prep_high_score()
+    sb.prep_level()
+    sb.prep_ships()
+
+    aliens.empty()
+    bullets.empty()
+    alien_bullets.empty()
+    barriers.empty()
+    smokes.empty()
+    ufo.reset()
+
+    sounds.ufo_stop()
+    create_fleet(ai_settings, screen, sounds, aliens)
+    ship.center_ship()
+    create_barriers(ai_settings, screen, barriers)
+
+
 def press_play_button(ai_settings, screen, sounds, stats, sb,
-                      play_button, ship, aliens, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y):
+                      play_button, ship, aliens, ufo, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y):
     button_clicked = play_button.rect.collidepoint(mouse_x, mouse_y)
     if button_clicked and not stats.game_active:
-        ai_settings.initialize_dynamic_settings()
-        pygame.mouse.set_visible(False)
-        stats.reset_stats()
-        stats.game_active = True
-
-        sb.prep_score()
-        sb.prep_high_score()
-        sb.prep_level()
-        sb.prep_ships()
-
-        aliens.empty()
-        bullets.empty()
-        alien_bullets.empty()
-        barriers.empty()
-        smokes.empty()
-
-        create_fleet(ai_settings, screen, sounds, aliens)
-        ship.center_ship()
-        create_barriers(ai_settings, screen, barriers)
+        restart(ai_settings, screen, sounds, stats, sb,
+                      ship, aliens, ufo, bullets, barriers, alien_bullets, smokes)
 
 
 def update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets,
@@ -136,7 +142,7 @@ def update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets,
 
 
 def update_bullets(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
-                   bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer, simplify=False):
+                   bullets, bullet_delay, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer, simplify=False):
     bullets.update(simplify)
     alien_bullets.update(simplify)
 
@@ -152,7 +158,6 @@ def update_bullets(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
     check_bullet_ufo_collision(ai_settings, screen, stats, sb, ufo, bullets, smokes)
     check_bullet_barrier_collisions(bullets, barriers, alien_bullets)
     check_bullet_ship_collisions(ship, alien_bullets)
-
 
 def check_bullet_ship_collisions(ship, alien_bullets):
     collision = False
@@ -224,11 +229,12 @@ def check_bullet_barrier_collisions(bullets, barriers, alien_bullets):
                 barrier.damage()
 
 
-def fire_bullet(ai_settings, screen, sounds, ship, bullets):
-    if len(bullets) < ai_settings.bullets_allowed:
+def fire_bullet(ai_settings, screen, sounds, ship, bullets, bullet_delay):
+    if len(bullets) < ai_settings.bullets_allowed and bullet_delay <= 0:
         new_bullet = Bullet(ai_settings, screen, ship, True)
         bullets.add(new_bullet)
         sounds.laser_play()
+
 
 
 def create_alien(ai_settings, screen, sounds, aliens, alien_number, row_number, alien_type, alt_frame):
@@ -386,13 +392,15 @@ def create_barriers(ai_settings, screen, barriers):
         saved_x += 300
 
 
-def update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, ship_timer, alien_timer):
+def update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, ship_timer, alien_timer, simplify=False):
     if not ship.hit:
         ship.update()
     else:
-        if ship_timer.check():
+        if ship_timer.check() and not simplify:
             if ship.play_death():
                 ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer)
+        else:
+            ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer)
 
 
 def menu_screen(menu_bg, play_button, high_score_button):

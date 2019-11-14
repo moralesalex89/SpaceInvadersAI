@@ -4,11 +4,14 @@ import random
 import cv2
 from PIL import ImageGrab
 from collections import deque
+import pickle
+import os
 
 import keras
 from keras import *
 
 from space_invaders import SpaceInvadersGame
+
 
 image_cols = 160
 image_rows = 200
@@ -26,14 +29,14 @@ BATCH = 32
 FRAME_PER_ACTION = 1
 
 
-def convert_image(image_data):
-    new_image_data = numpy.array(image_data)
-    new_image_data = cv2.resize(new_image_data, (0, 0), fx=0.15, fy=0.10)
-    new_image_data = new_image_data[2:38, 10:50]
-    new_image_data = cv2.cvtColor(new_image_data, cv2.COLOR_BGR2GRAY)
-    ret, new_image_data = cv2.threshold(new_image_data, 0, 255, cv2.THRESH_BINARY)
-    new_image_data = cv2.Canny(new_image_data, threshold1=100, threshold2= 200)
-    return new_image_data
+def save_obj(obj, name):
+    with open('objects/'+ name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+
+def load_obj(name):
+    with open('objects/' + name + '.pkl', 'rb') as f:
+        return pickle.load(f)
 
 
 def create_model():
@@ -54,40 +57,47 @@ def create_model():
 
 
 def play_frame(game, action, simplify=True):
-    inputs = [False, False, False] # [move right, move left, fire bullet]
+    inputs = [0, 0, 0] # [move right, move left, fire bullet]
     # do nothing
     if action[0] == 1:
         pass
     # move right or move right + shoot
-    elif action[1] or action[3]:
-        inputs[0] = True
+    elif int(action[1]) == 1 or int(action[3]) == 1:
+        inputs[0] = 1
     # move left or move left + shoot
-    elif action[2] or action[4]:
-        inputs[1] = True
+    elif int(action[2]) == 1 or int(action[4]) == 1:
+        inputs[1] = 1
     # move left/right + shoot or shoot
-    if action[3] or action[4] or action[5]:
-        inputs[2] = True
+    if int(action[3]) == 1 or int(action[4]) == 1 or int(action[5]) == 1:
+        inputs[2] = 1
 
+    print(inputs)
     reward, image, active = game.frame_step(simplify=simplify, inputs=inputs)
-    #converted_image = convert_image(image)
 
     return reward, image, active
 
 
-def train_net(game, model, active=True):
-    D = deque()
-    action = [False, False, False, False, False, False]
-    action[0] = True
+def train_net(game, model, observe=False):
+    D = load_obj("D")
+    action = numpy.zeros(action_count)
+    action[0] = 1
 
     reward, image, active = play_frame(game=game, action=action, simplify=True)
-    #image = convert_image(image)
     stacked_image = numpy.stack((image, image, image, image), axis=2)
-    print stacked_image.shape
     stacked_image = stacked_image.reshape(1, image_rows, image_cols, stack_count)
 
-    observe = OBSERVATION
-    epsilon = INITIAL_EPSILON
-    t = 0
+    if observe:
+        OBSERVE = 5000
+        epsilon = FINAL_EPSILON
+        model.load_weights("models\model.h5")
+        adam = keras.optimizers.Adam(1e-4)
+        model.compile(loss='mse, optimizer=adam')
+    else:
+        OBSERVE = OBSERVATION
+        epsilon = load_obj("epsilon")
+        model.load_weights("models\model.h5")
+
+    t = load_obj("time")
 
     while True:
         loss = 0
@@ -98,21 +108,18 @@ def train_net(game, model, active=True):
 
         if random.random() <= epsilon:
             action_index = random.randrange(action_count)
-            current_action[action_index] = True
+            current_action[action_index] = 1
         else:
             q = model.predict(stacked_image)
             max_Q = numpy.argmax(q)
             action_index = max_Q
-            current_action[action_index] = True
+            current_action[action_index] = 1
 
-        print(action_index)
-
-        if epsilon > FINAL_EPSILON and t > observe:
+        if epsilon > FINAL_EPSILON and t > OBSERVE:
             epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
         reward, c_image, active = play_frame(game=game, action=current_action, simplify=True)
         last_time = time.time()
-        #c_image = convert_image(c_image)
         c_image = c_image.reshape(1, c_image.shape[0], c_image.shape[1], 1)
         c_stacked_image = numpy.append(c_image, stacked_image[:, :, :, :3], axis=3)
 
@@ -120,15 +127,22 @@ def train_net(game, model, active=True):
         if len(D) > REPLAY_MEMORY:
             D.popleft()
 
-        if t > observe:
+        if t > OBSERVE:
             train_batch(random.sample(D, BATCH), model, Q_sa, loss)
         stacked_image = c_stacked_image
         t += 1
 
+        if t % 1000 == 0:
+            model.save_weights("models\model.h5", overwrite=True)
+            save_obj(D, "D")
+            save_obj(t, "time")
+            save_obj(epsilon, "epsilon")
+            print("Objects Saved")
+
 
 def train_batch(minibatch, model, Q_sa, loss):
-    inputs = numpy.zeros((BATCH, image_cols, image_rows, stack_count), dtype=bool)
-    targets = numpy.zeros((inputs.shape[0], action_count))
+    inputs = numpy.zeros((BATCH, image_rows, image_cols, stack_count), dtype=numpy.float32)
+    targets = numpy.zeros((inputs.shape[0], action_count), dtype=numpy.float32)
 
     for i in range(0, len(minibatch)):
         curr_state = minibatch[i][0]
@@ -143,14 +157,13 @@ def train_batch(minibatch, model, Q_sa, loss):
             targets[i, curr_action] = curr_reward
         else:
             targets[i, curr_action] = curr_reward + GAMMA * numpy.max(Q_sa)
-
     loss += model.train_on_batch(inputs, targets)
 
 
 def playGame(observe=False):
     game = SpaceInvadersGame()
     model = create_model()
-    train_net(game=game, model=model)
+    train_net(game=game, model=model, observe=observe)
 
 
-playGame()
+playGame(observe=False)

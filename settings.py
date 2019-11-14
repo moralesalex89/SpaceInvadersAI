@@ -13,11 +13,12 @@ class Settings:
         self.bullet_height = 15
         self.bullet_color = 60, 60, 60
         self.bullets_allowed = 3
+        self.bullet_delay = 5
 
-        self.alien_points_a = 4
-        self.alien_points_b = 2
-        self.alien_points_c = 1
-        self.alien_points_ufo = 20
+        self.alien_points_a = 40
+        self.alien_points_b = 20
+        self.alien_points_c = 10
+        self.alien_points_ufo = 200
         self.alien_bullet_speed_factor = 5
         self.alien_space_factor = 25
         self.alien_fleet_cols = 11
