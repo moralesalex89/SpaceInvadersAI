@@ -30,7 +30,7 @@ class Barrier(Sprite):
         self.type = barrier_type
         self.image = images[self.type]
         self.rect = self.image.get_rect()
-        self.health = 2
+        self.health = 1
         self.rect.centerx = x_pos
         self.rect.top = y_pos
 

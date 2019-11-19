@@ -20,7 +20,7 @@ stack_count = 4
 action_count = 6
 
 GAMMA = 0.99
-OBSERVATION = 1000
+OBSERVATION = 5000
 EXPLORE = 100000
 INITIAL_EPSILON = 0.1
 FINAL_EPSILON = 0.0001
@@ -71,7 +71,6 @@ def play_frame(game, action, t, simplify=True):
     if int(action[3]) == 1 or int(action[4]) == 1 or int(action[5]) == 1:
         inputs[2] = 1
 
-    print(inputs)
     name = "AI_at_time_" + str(t)
     reward, image, active = game.frame_step(simplify=simplify, inputs=inputs, name=name)
     image = prepare_image(image)
@@ -139,6 +138,7 @@ def train_net(game, model, observe=False):
         else:
             stacked_image = c_stacked_image
 
+        print("Time: " + str(t) + "   Reward: " + str(reward) + "   Action: " + str(action_index))
         t += 1
 
         if t % 1000 == 0:
@@ -201,5 +201,8 @@ def playGame(observe=False):
     train_net(game=game, model=model, observe=observe)
 
 
+# For first run only
 #init_objs()
+
+
 playGame(observe=False)

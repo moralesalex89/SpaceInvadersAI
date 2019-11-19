@@ -43,7 +43,7 @@ class SpaceInvadersGame:
         self.ufo = UFO(self.ai_settings, self.screen, self.sounds)
         self.barriers = Group()
         self.smokes = Group()
-        self.inactive = self.ai_settings.fps * 10
+        self.inactive = 240
 
         gf.create_fleet(self.ai_settings, self.screen, self.sounds, self.aliens)
         gf.create_barriers(self.ai_settings, self.screen, self.barriers)
@@ -125,8 +125,7 @@ class SpaceInvadersGame:
                 image_data = pygame.surfarray.array3d(img)
 
         clock.tick(self.ai_settings.fps)
-        self.inactive += reward
-        print(reward, self.inactive)
+#        self.inactive += reward
 
         return reward, image_data, game_state
 
