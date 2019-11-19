@@ -44,7 +44,7 @@ class UFO:
         # base score initially divided by 10 and the * 10 is given back down here
         # this is to make all returned scores divisible by 10 so it always returns a "Nice" value
         score *= 10
-        print("UFO gave you " + str(score) + " points.")
+#        print("UFO gave you " + str(score) + " points.")
         return score
 
     def set_spawn(self, is_left):

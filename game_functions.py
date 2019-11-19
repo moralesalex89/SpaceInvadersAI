@@ -434,6 +434,59 @@ def ship_in_bullet_path(ship, alien_bullets):
     return False
 
 
+def test_path(settings, alien, bullet):
+    #Tests the bullet's current path to see if its predicted to collide with the target
+
+    distance = alien.rect.bottom - bullet.rect.top
+    pred_alien_center = alien.rect.centerx
+    pred_direction = settings.fleet_direction
+    while distance > 0:
+        distance -= settings.bullet_speed_factor
+        pred_alien_center += settings.alien_speed_factor * pred_direction
+        if 0 <= pred_alien_center <= 1200:
+            pred_direction *= -1
+
+    pred_left = pred_alien_center - (1/2 * alien.rect.width)
+    pred_right = pred_alien_center + (1/2 * alien.rect.width)
+    if bullet.rect.left < alien.rect.right and bullet.rect.right > alien.rect.left:
+        return True
+    else:
+        return False
+
+
+def bullet_aim(settings, bullets, aliens, ufo):
+    bullet_weight = 0.2
+    aliens_copy = aliens.copy()
+    total_score = 0.0
+    ufo_copy = ufo
+    for bullet in bullets:
+        best_distance = 999
+        best_alien = None
+        for alien in aliens_copy:
+            if test_path(settings, alien, bullet):
+                distance = bullet.rect.top - alien.rect.bottom
+                if 0 <= distance <= best_distance:
+                    best_distance = distance
+                    best_alien = alien
+        if ufo_copy is not None:
+            if test_path(settings, ufo, bullet):
+                distance = bullet.rect.top - ufo.rect.bottom
+                if 0 <= distance < best_distance:
+                    best_distance = distance
+                    best_alien = ufo_copy
+
+        if best_alien is not None:
+            total_score += bullet_weight
+            if best_alien is ufo_copy:
+                ufo_copy = None
+            else:
+                aliens_copy.remove(best_alien)
+        else:
+            total_score -= bullet_weight
+
+    return total_score
+
+
 def menu_screen(menu_bg, play_button, high_score_button):
     menu_bg.draw_button()
     play_button.draw_button()

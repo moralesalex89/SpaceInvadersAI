@@ -87,17 +87,20 @@ class SpaceInvadersGame:
 
         pygame.display.update()
 
-        reward = 0
-        if bullet_count > len(self.bullets):
-            if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
-                reward += 1
-            else:
-                reward -= 1
-        if not gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens, self.ufo):
-            reward -= 1
+        reward = 0.0
+        if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
+            reward += 0.5
+        if gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens, self.ufo):
+            reward += 0.1
+        else:
+            reward -= 0.1
+        reward += gf.bullet_aim(self.ai_settings, self.bullets, self.aliens, self.ufo)
         if gf.ship_in_bullet_path(self.ship, self.alien_bullets):
-            reward -= 1
-        if reward < 0:
+            reward -= 1.2
+
+        if reward > 1:
+            reward = 1
+        elif reward < -1:
             reward = -1
 
         if alien_count < len(self.aliens):
@@ -126,7 +129,6 @@ class SpaceInvadersGame:
 
         clock.tick(self.ai_settings.fps)
 #        self.inactive += reward
-
         return reward, image_data, game_state
 
 
