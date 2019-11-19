@@ -90,6 +90,8 @@ class SpaceInvadersGame:
         reward = 0.0
         if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
             reward += 0.5
+        elif len(self.bullets) == 0:
+            reward -= 0.1
         if gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens, self.ufo):
             reward += 0.1
         else:
