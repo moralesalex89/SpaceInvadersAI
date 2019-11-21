@@ -88,22 +88,24 @@ class SpaceInvadersGame:
         pygame.display.update()
 
         reward = 0.0
-        if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
-            reward += 0.5
-        elif len(self.bullets) == 0:
-            reward -= 0.2
-        if gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens, self.ufo):
-            reward += 0.1
-        else:
-            reward -= 0.1
-        reward += gf.bullet_aim(self.ai_settings, self.bullets, self.aliens, self.ufo)
-        if gf.ship_in_bullet_path(self.ship, self.alien_bullets):
-            reward -= 1.2
 
-        if reward > 1:
-            reward = 1
-        elif reward < -1:
-            reward = -1
+        if len(self.aliens) > 0:
+            if len(self.aliens) < alien_count or self.ufo.hit != ufo_state:
+                reward += 0.5
+            elif len(self.bullets) == 0:
+                reward -= 0.2
+            if gf.ship_in_invader_range(self.ai_settings, self.ship, self.aliens, self.ufo):
+                reward += 0.1
+            else:
+                reward -= 0.1
+            reward += gf.bullet_aim(self.ai_settings, self.bullets, self.aliens, self.ufo)
+            reward += gf.ship_in_bullet_path(self.ship, self.alien_bullets)
+
+        if reward > 1.0:
+            reward = 1.0
+        elif reward < -1.0:
+            reward = -1.0
+        print reward
 
         if alien_count < len(self.aliens):
             game_state = False
@@ -137,5 +139,5 @@ class SpaceInvadersGame:
 if __name__ == '__main__':
     game = SpaceInvadersGame()
     status = True
-    while status:
+    while True:
         status = game.frame_step(simplify=True)[2]

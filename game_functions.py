@@ -427,11 +427,29 @@ def ship_in_invader_range(ai_settings, ship, aliens, ufo):
 
 
 def ship_in_bullet_path(ship, alien_bullets):
+    reward = 0.0
     for bullet in alien_bullets:
+        distance = 9999
         if ship.rect.left < bullet.rect.right and ship.rect.right > bullet.rect.left:
-            if abs(bullet.rect.bottom - ship.rect.top) <= ship.rect.height:
-                return True
-    return False
+            c_distance = abs(bullet.rect.bottom - ship.rect.top)
+            if c_distance < distance:
+                distance = c_distance
+                is_above = False
+                if bullet.rect.bottom < ship.rect.top:
+                    is_above = True
+                if distance <= ship.rect.height:
+                    reward = -1.2
+                elif distance <= 2 * ship.rect.height and is_above:
+                    reward = -0.7
+                elif distance <= 3 * ship.rect.height and is_above:
+                    reward = -0.3
+                elif is_above:
+                    reward = -0.1
+
+    if reward < 0.0 and (ship.moving_left or ship.moving_right):
+        reward += 0.1
+
+    return reward
 
 
 def test_path(settings, alien, bullet):
