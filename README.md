@@ -1,5 +1,7 @@
 # SpaceInvadersAI
 
+Group : Alex Morales , Daniel Ariza
+
 Space Invaders AI Project
 
 Uses Deep Reinforcement Learning to teach an AI how to play Space Invaders
