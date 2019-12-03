@@ -201,8 +201,15 @@ def playGame(observe=False):
     train_net(game=game, model=model, observe=observe)
 
 
-# For first run only
-#init_objs()
+def CheckFiles():
+    while True:
+        filelist = ['objects/epsilon.pkl', 'objects/time.pkl', 'objects/D.pkl', 'models/model.h5']
+        if all([os.path.isfile(f) for f in filelist]):
+            break
+        else:
+            init_objs()
+            
 
 
+CheckFiles()
 playGame(observe=False)
